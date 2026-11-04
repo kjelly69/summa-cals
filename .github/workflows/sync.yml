@@ -1,0 +1,51 @@
+name: Sync calendars
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Fetch Google Calendar feeds
+        env:
+          SOCIAL_ICS_URL: ${{ secrets.SOCIAL_ICS_URL }}
+          CALL_ICS_URL: ${{ secrets.CALL_ICS_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          curl -fsSL --retry 3 "$SOCIAL_ICS_URL" -o site/social.ics
+          curl -fsSL --retry 3 "$CALL_ICS_URL" -o site/call-boyz.ics
+          for f in site/*.ics; do grep -q "BEGIN:VCALENDAR" "$f" && grep -q "END:VCALENDAR" "$f"; done
+          echo '<!doctype html><title>Calendars</title><p>Subscribe: <a href="social.ics">Summa General Surgery Social Cal</a> | <a href="call-boyz.ics">Call Boyz</a></p>' > site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  keepalive:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1
