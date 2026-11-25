@@ -36,11 +36,11 @@ jobs:
           for f in site/*.ics; do grep -q "BEGIN:VCALENDAR" "$f" && grep -q "END:VCALENDAR" "$f"; done
           echo '<!doctype html><title>Calendars</title><p>Subscribe: <a href="social.ics">Summa General Surgery Social Cal</a> | <a href="call-boyz.ics">Call Boyz</a></p>' > site/index.html
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   keepalive:
     runs-on: ubuntu-latest
